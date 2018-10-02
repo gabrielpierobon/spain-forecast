@@ -1,8 +1,4 @@
-# spain-forecast
-Spain's main economic aggregates forecasted using ARIMA
-
-
-
+# Spain's main economic aggregates forecasted using ARIMA
 
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
