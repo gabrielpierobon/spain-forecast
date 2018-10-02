@@ -9,13 +9,13 @@ library(GGally)
 
 ```{r message=FALSE, warning=FALSE}
 # Download the dataset & label the data
-#data <- get_eurostat("namq_10_gdp", time_format = "num")
-#data <- label_eurostat(data)
+data <- get_eurostat("namq_10_gdp", time_format = "num")
+data <- label_eurostat(data)
 ```
 
 ```{r}
 # Save the data
-#saveRDS(data, file = "/Users/Gabriel Pierobon/Documents/Publicaciones/Eurostat/data.RDS")
+saveRDS(data, file = "/Users/Gabriel Pierobon/Documents/Publicaciones/Eurostat/data.RDS")
 ```
 
 ```{r}
@@ -40,6 +40,7 @@ data$geo <- NULL
 ```
 
 ```{r}
+# Select columns and change names
 data <- data[, c(1, 3, 7, 18, 19, 22, 31)]
 
 names(data)[2]<-paste("GDP")
@@ -53,11 +54,14 @@ names(data)
 ```
 
 ```{r}
+# Convert to time series format
 data <- ts(data[, -1], start = c(1995, 1), frequency = 4)
 head(data, 20)
 ```
 
 ```{r}
+# Plot all the time series together
+
 autoplot(data, facets = TRUE) +
   labs(title = "Time Series plot of Spain economic indicators",
        subtitle = "1995-2018 / In millions of euros (€)",
@@ -65,19 +69,18 @@ autoplot(data, facets = TRUE) +
        x = "Period")
 ```
 
-```{r message=FALSE, warning=FALSE}
-data %>% as.data.frame() %>% ggpairs(title = "Pairs Plot")
-```
 
 ```{r}
+# Plot the GDP time series
 autoplot(data[, "GDP"]) +
  labs(title = "Spain's GDP evolution", 
       subtitle = "1995-2018 / In millions of euros (€)", 
       y ="GDP (€) in millions",
-      x = "Period")A
+      x = "Period")
 ```
 
 ```{r}
+# Subseries plot
 ggsubseriesplot(data[, "GDP"]) +
   labs(title = "Subseries Plot: observe average seasonality for all years",
        subtitle = "Spain's quarterly GDP",
@@ -85,6 +88,7 @@ ggsubseriesplot(data[, "GDP"]) +
 ```
 
 ```{r}
+# Seasonplot
 ggseasonplot(data[, "GDP"], year.labels = TRUE, year.labels.left = TRUE) +
   labs(title = "Subseries Plot: observe seasonality in each year",
        subtitle = "Spain's quarterly GDP",
@@ -93,15 +97,12 @@ ggseasonplot(data[, "GDP"], year.labels = TRUE, year.labels.left = TRUE) +
 ```
 
 ```{r}
-ggAcf(data[, "GDP"]) +
-  ggtitle("Autocorrlation function: GDP")
-```
-
-```{r}
+# Create train_set
 train_set <- window(data, end = c(2016, 4))
 ```
 
 ```{r}
+# Fit ARIMA model
 arima_train <- auto.arima(train_set[, "GDP"], 
                           trace = FALSE, 
                           ic = "aicc", 
@@ -112,14 +113,17 @@ arima_train
 ```
 
 ```{r message=FALSE, warning=FALSE}
+# Check residuals of the model
 checkresiduals(arima_train)
 ```
 
 ```{r}
+# Compute accuracy
 round(accuracy(forecast(arima_train, h = 5), data[, "GDP"]), 3)
 ```
 
 ```{r}
+# Fit full model
 arima_full <- auto.arima(data[, "GDP"],
                          trace = FALSE, 
                          ic = "aicc", 
@@ -130,6 +134,8 @@ arima_full
 ```
 
 ```{r message=FALSE, warning=FALSE}
+# Forecast and plot
+
 options(scipen = 999)
 
 arima_full %>% forecast(h = 8) %>% autoplot() +
@@ -141,6 +147,7 @@ arima_full %>% forecast(h = 8) %>% autoplot() +
 ```
 
 ```{r}
+# Forecast table
 gdp_fcst <- as.data.frame(forecast(arima_full, h = 8))
 gdp_fcst$Indicator <- "GDP"
 gdp_fcst$Period <- rownames(gdp_fcst)
@@ -264,11 +271,10 @@ sal_fcst$Period <- rownames(sal_fcst)
 ```
 
 ```{r}
+# Combined prediction table
 predictions <- rbind(gdp_fcst, con_fcst, cap_fcst, exp_fcst, imp_fcst, sal_fcst) %>% select(7,6,2,4,1,3,5)
 rownames(predictions) <- c()
 predictions
 ```
-
-
 
 
